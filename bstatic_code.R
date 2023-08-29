@@ -165,48 +165,48 @@ right <- mono / bottom_plot + plot_layout(heights = c(10, 1))
 left <- dynamics / blank_plot + plot_layout(heights = c(1, 0))
 
 # print as a pdf
-pdf("bacteriostatic/fig1.pdf", width = 20, height = 10)
+pdf("figs/fig1.pdf", width = 20, height = 10)
 left | right
 dev.off()
 
-save(mono_high_res, file = "bacteriostatic/fig1.rdata")
+save(mono_high_res, file = "figs/fig1.rdata")
 
 ### Figure 2
 summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = seq(0, 1, 0.05),
     therapy = c("Combination", "Cycling"), resources = c("Abundant", "Intermediate", "Limiting"))
 multi <- run_sims(summary, rep = 1e3)
 
-pdf("bacteriostatic/fig2.pdf", width = 20, height = 25)
+pdf("figs/fig2.pdf", width = 20, height = 25)
 main_plot(multi)
 dev.off()
 
-save(multi, file = "bacteriostatic/fig2.rdata")
+save(multi, file = "figs/fig2.rdata")
 
 ### Figure S1
 summary <- subset(summary, therapy == "Cycling" & resources == "Abundant")
 cs <- run_sims(summary, rep = 1e3, zeta_A = c(N_S = 1, N_A = 28, N_B = 0.5, N_AB = 28),
     zeta_B = c(N_S = 1, N_A = 0.5, N_B = 28, N_AB = 28), delta = -0.05, influx = 7 * c(C_A = 1, C_B = 1))
 
-pdf("bacteriostatic/figS1.pdf", width = 10, height = 10)
+pdf("figs/figS1.pdf", width = 10, height = 10)
 main_plot(cs)
 dev.off()
 
-save(cs, file = "bacteriostatic/figS1.rdata")
+save(cs, file = "figs/figS1.rdata")
 
 ### Figure S2
 quick_degrade <- run_sims(summary, rep = 1e3, influx = 30 * c(C_A = 1, C_B = 1), d_ = 0.4, delta = 0.3)
 
-pdf("bacteriostatic/figS2.pdf", width = 10, height = 10)
+pdf("figs/figS2.pdf", width = 10, height = 10)
 main_plot(quick_degrade)
 dev.off()
 
-save(quick_degrade, file = "bacteriostatic/figS2.rdata")
+save(quick_degrade, file = "figs/figS2.rdata")
 
 ### Figure S3
 pre_existing <- run_sims(summary, rep = 1e3, m_A = 0, m_B = 0, init_B = 5, delta = 0.1)
 
-pdf("bacteriostatic/figS3.pdf", width = 10, height = 10)
+pdf("figs/figS3.pdf", width = 10, height = 10)
 main_plot(pre_existing)
 dev.off()
 
-save(pre_existing, file = "bacteriostatic/figS3.rdata")
+save(pre_existing, file = "figs/figS3.rdata")
