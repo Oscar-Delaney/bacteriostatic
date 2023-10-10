@@ -186,7 +186,7 @@ save(multi, file = "figs/fig2.rdata")
 ### Figure S1
 summary <- subset(summary, therapy == "Cycling" & resources == "Abundant")
 cs <- run_sims(summary, rep = 1e3, zeta_A = c(N_S = 1, N_A = 28, N_B = 0.5, N_AB = 28),
-    zeta_B = c(N_S = 1, N_A = 0.5, N_B = 28, N_AB = 28), delta = -0.05, influx = 7 * c(C_A = 1, C_B = 1))
+    zeta_B = c(N_S = 1, N_A = 0.5, N_B = 28, N_AB = 28), influx = 1.7 * c(C_A = 1, C_B = 1))
 
 pdf("figs/figS1.pdf", width = 10, height = 10)
 main_plot(cs)
@@ -195,7 +195,7 @@ dev.off()
 save(cs, file = "figs/figS1.rdata")
 
 ### Figure S2
-quick_degrade <- run_sims(summary, rep = 1e3, influx = 30 * c(C_A = 1, C_B = 1), d_ = 0.4, delta = 0.3)
+quick_degrade <- run_sims(summary, rep = 1e3, influx = 30 * c(C_A = 1, C_B = 1), d_ = 0.4)
 
 pdf("figs/figS2.pdf", width = 10, height = 10)
 main_plot(quick_degrade)
