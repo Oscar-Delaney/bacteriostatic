@@ -18,7 +18,7 @@ target_hit <- function(sol, target = 1e2, strains = c("N_A", "N_B")) {
 run_sims <- function(summary, zeta_A = c(N_S = 1, N_A = 28, N_B = 1, N_AB = 28),
 zeta_B = c(N_S = 1, N_A = 1, N_B = 28, N_AB = 28), delta = 0.25, rep = 1, dose_gap = 10,
 influx = 3 * c(C_A = 1, C_B = 1), m_A = 1e-9, m_B = 1e-9, d_ = 0, init_A = 0,
-init_B = 0, R0 = 1e8, data = FALSE) {
+init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
     summary$bstatic_A <- 1 - summary$bcidal_A
     summary$bstatic_B <- 1 - summary$bcidal_B
     for (i in seq_len(nrow(summary))) {
@@ -49,6 +49,7 @@ init_B = 0, R0 = 1e8, data = FALSE) {
             influx =  influx * (1 + !cycl),
             cycl = cycl,
             m_A = m_A, m_B = m_B,
+            i_A_B = i_A_B, i_B_A = i_B_A,
             d_A = d, d_B = d
         )[[1]]
         wins <- 1 - target_hit(sol)
@@ -203,10 +204,46 @@ dev.off()
 save(quick_degrade, file = "figs/figS2.rdata")
 
 ### Figure S3
-pre_existing <- run_sims(summary, rep = 1e3, m_A = 0, m_B = 0, init_B = 5, delta = 0.1)
+pre_existing <- run_sims(summary, rep = 1e3, m_A = 0, m_B = 0, init_B = 5, influx = 2 * c(C_A = 1, C_B = 1))
 
 pdf("figs/figS3.pdf", width = 10, height = 10)
 main_plot(pre_existing)
 dev.off()
 
 save(pre_existing, file = "figs/figS3.rdata")
+
+### Figure S4
+synergism <- run_sims(summary, rep = 1e3, i_A_B = 3, i_B_A = 3, influx = 1.5 * c(C_A = 1, C_B = 1))
+
+pdf("figs/figS4.pdf", width = 10, height = 10)
+main_plot(synergism)
+dev.off()
+
+save(synergism, file = "figs/figS4.rdata")
+
+### Figure S5
+antagonism <- run_sims(summary, rep = 1e3, i_A_B = -3, i_B_A = -3, influx = 7 * c(C_A = 1, C_B = 1))
+
+pdf("figs/figS5.pdf", width = 10, height = 10)
+main_plot(antagonism)
+dev.off()
+
+save(antagonism, file = "figs/figS5.rdata")
+
+
+### Combined Figure
+cr <- run_sims(summary, rep = 1e3, zeta_A = c(N_S = 1, N_A = 28, N_B = 2, N_AB = 28),
+    zeta_B = c(N_S = 1, N_A = 2, N_B = 28, N_AB = 28))
+save(cr, file = "figs/cr.rdata")
+main_plot(cr)
+further <- rbind(
+  cs %>% mutate(resources = "CS/CR", therapy = "1"),
+  cr %>% mutate(resources = "CS/CR", therapy = "2"),
+  synergism %>% mutate(resources = "interaction", therapy = "1"),
+  antagonism %>% mutate(resources = "interaction", therapy = "2"),
+  quick_degrade %>% mutate(resources = "other", therapy = "1"),
+  pre_existing %>% mutate(resources = "other", therapy = "2")
+)
+pdf("figs/further.pdf", width = 20, height = 25)
+main_plot(further, titles = FALSE)
+dev.off()
