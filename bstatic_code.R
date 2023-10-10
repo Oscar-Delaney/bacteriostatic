@@ -1,5 +1,4 @@
 source("stochastic.R")
-library(gridExtra)
 library(patchwork)
 library(cowplot)
 
@@ -84,7 +83,7 @@ side_plot <- ggplot() +
 blank_plot <- ggplot() + theme_void()
 
 # Create a 2D tile plot of the results
-main_plot <- function(summary) {
+main_plot <- function(summary, titles = TRUE) {
     labels <- expand.grid(bcidal_A = 0, bcidal_B = 1, therapy = unique(summary$therapy), resources = unique(summary$resources))
     labels$label <- LETTERS[1:nrow(labels)]
 
@@ -112,7 +111,8 @@ main_plot <- function(summary) {
         p <- p +
             facet_grid(rows = vars(resources), cols = vars(therapy)) +
             geom_text(data = labels, aes(label = label), vjust = 1, hjust = 0, size = 15, fontface = "bold") +
-            scale_fill_gradient(low = "white", high = "blue", limits = c(0, 1))
+            scale_fill_gradient(low = "white", high = "blue")
+        if (!titles) {p <- p + theme(strip.text = element_blank())}
 
         ratio <- 20
     } else {
