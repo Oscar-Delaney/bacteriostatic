@@ -162,7 +162,7 @@ mono <- ggplot(mono_high_res, aes(x = bcidal_A, y = wins)) +
     ) +
     annotate("text", x = 0, y = Inf, label = "B", hjust = 1, vjust = 1.5,
         size = 15, fontface = "bold")
-right <- mono / bottom_plot + plot_layout(heights = c(10, 1))
+right <- mono / bottom_plot + plot_layout(heights = c(9, 1))
 left <- dynamics / blank_plot + plot_layout(heights = c(1, 0))
 
 # print as a pdf
