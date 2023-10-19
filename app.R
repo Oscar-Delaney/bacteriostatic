@@ -6,125 +6,102 @@ library(rsconnect)
 # Load the stochastic.R file
 source("stochastic.R")
 
-# Explanatory text
-basic_text <- "This is a model describing the evolution of antibiotic resistance
+general_text <- "This is a model describing the evolution of antibiotic resistance
 in a bacterial population. It uses the Adaptive Tau package to stochastify
-an ODE model. For details see Delaney, Engelstaedter, and Letten (forthcoming).
-Contact Oscar Delaney on o.delaney@uq.net.au with any errors or suggestions."
+an ODE model. For details see <br> Delaney, Letten, and Engelstaedter,
+<i>Drug mode of action and resource constraints modulate antimicrobial
+resistance evolution</i> <a href='https://doi.org/10.1101/2023.08.29.555413'
+target='_blank'>https://doi.org/10.1101/2023.08.29.555413</a>. <br>
+For any suggestions or comments contact Oscar Delaney on
+<a href='mailto:o.delaney@uq.net.au'>o.delaney@uq.net.au</a> <br>"
 
-drugs_text <- "A and B are arbitrary antibiotics. The mutation rate
-is the proportion of genome replications that result in resistance to 
-that drug. The elimination rate is the rate at which the drug degenerates
-in the body, in units of hours^-1. The influx is the concentration of
-each drug added at bottleneck events, in units of zeta (see pharmacodynamics).
-The recombination rate determines the rate at which the N_S + N_AB <--> N_A + N_B
-reversible reaction occurs, with reasonable values being <1e-13 or so."
+drugs_text <- "A and B are arbitrary antibiotics. The influx the concentration
+\\(C_j(0)\\) is the amount of drug \\(j\\) added at bottleneck events, in units
+of \\(z\\) (see 'Bacteria' tab). The mutation rate \\(m_j\\) is the proportion
+of genome replications that result in resistance to drug \\(j\\). The elimination
+rate \\(\\gamma_j\\) is the rate at which the drug degenerates in the body,
+in units of \\(hours^{-1}\\). The maximum bactericidal and bacteriostatic
+activity of drug \\(j\\) are \\(\\theta_j\\) and \\(\\phi_j\\) respectively.
+The pharmacodynamic shape parameter of of drug \\(j\\) is \\(\\beta_j\\)."
 
-growth_text <- "The rows represent four bacterial strains: Susceptible, 
-A-resistant, B-resistant, and double resistant. 
-Init is the starting population size of each strain. Mu is the growth
-rate with unlimited resources. K is the resource concentration that produces 
-half the maximal growth rate. Alpha is the amount of resources used per new
-bacterial cell."
+bacteria_text <- "The rows represent four bacterial strains: Susceptible, 
+A-resistant, B-resistant, and double resistant. \\(N_i(0)\\) is the starting
+population size of strain \\(i\\). \\(\\mu_i\\) is the growth rate of strain
+\\(i\\) with unlimited resources. \\(K_i\\) is the resource concentration that
+produces half the maximal growth rate in strain \\(i\\). \\(\\delta_i\\) is the
+intrinsic death rate of strain \\(i\\). \\(z_{i,j}\\) is the concentration of
+drug \\(j\\) that produces half its maximal effect in strain \\(i\\)."
 
 events_text <- "The two possible time-discontinuous features of the model
-are dosing with antibiotics, and bottlenecks where the population size is
-reduced proportionally and new resources are added. Supply determines the rate
-at which resources are continuously dded to the system. Drugs can be set to
+are dosing with antibiotics, and bottlenecks, where the populations of each
+strain are scaled down by dilution into fresh media. Resources can also be
+supplied continuously to the system, as in a chemostat. Drugs can be set to
 disappear when the next dose arrives, which is less realistic but sometimes
 convenient, or to persist through dosing."
-
-pd_text <- "Bcidal_i is the maximum death rate caused by drug i. Bstatic_i is
-the maximum proportional reduction in growth rate caused by drug i. Zeta_i is
-the concentration of antibiotic i resulting in half the maximal death rate.
-Kappa_i is the shape parameter, with smaller values representing a steep
-initial increase in death rate, and shallow gradient about zeta_i.
-Delta is the intrinsic death rate independent of drugs."
 
 # Default values
 drugs_default <- matrix(
     c(
+        6, 6, # drug influx concentrations, MIC units
         1e-9, 1e-9, # mutation rates
-        rep(round(log(2) / 3.5, 3), 2), # drug elimination rates
-        7, 7 # drug influx concentrations, MIC units
+        0.35, 0.35, # drug elimination rates
+        1, 1, # maximum bactericidal activity
+        0, 0, # maximum bacteriostatic activity
+        1, 1 # pharmacodynamics shape parameter
     ),
-    nrow = 2, ncol = 3,
+    nrow = 2, ncol = 6,
     dimnames = list(
         c("A", "B"),
-        c("Mutation rate", "Elimination rate", "Influx")
+        c("\\(C_j(0)\\)", "\\(m_j\\)", "\\(\\gamma_j\\)", "\\(\\theta_j\\)", "\\(\\phi_j\\)", "\\(\\beta_j\\)")
     )
 )
 
-growth_default <- matrix(
+bacteria_default <- matrix(
     c(
-        "1e+9", 0, 0, 0, # init: initial populations
-        0.88 * c(1, 0.9, 0.9, 0.81), # mu: growth rates
-        c(1e14, 1e14, 1e14, 1e14), # k: resources at half-maximal growth rate
-        1, 1, 1, 1 # alpha: resources used per unit growth
+        "1e+10", 0, 0, 0, # init: initial populations
+        1, 1, 1, 1, # mu: growth rates
+        rep(1e8, 4), # k: resources at half-maximal growth rate
+        rep(0.35, 4), # delta: intrinsic death rate
+        1, 28, 1, 28, # zeta_A: concentration of A at half-maximal death rate
+        1, 1, 28, 28 # zeta_B: concentration of B at half-maximal death rate
     ),
-    nrow = 4, ncol = 4,
+    nrow = 4, ncol = 6,
     dimnames = list(
-        c("N_S", "N_A", "N_B", "N_AB"),
-        c("Init", "Mu", "K", "Alpha")
+        c("S", "A", "B", "AB"),
+        c("\\(N_i(0)\\)", "\\(\\mu_i\\)", "\\(K_i\\)", "\\(\\delta_i\\)", "\\(z_{i,A}\\)", "\\(z_{i,B}\\)")
     )
 )
 
-pd_default <- matrix(
-    c(
-        1, 1, 1, 1, # Bcidal1
-        0, 0, 0, 0, # Bstatic1
-        1, 28, 1, 28, # zeta_A
-        1, 1, 1, 1, # kappa_A
-        1, 1, 1, 1, # Bcidal2
-        0, 0, 0, 0, # Bstatic2
-        1, 1, 28, 28, # zeta_B
-        1, 1, 1, 1, # kappa_B
-        0, 0, 0, 0 # delta
-    ),
-    nrow = 4, ncol = 9,
-    dimnames = list(
-        c("N_S", "N_A", "N_B", "N_AB"),
-        c("Bcidal1", "Bstatic1", "Zeta1", "Kappa1", "Bcidal2", "Bstatic2", "Zeta2", "Kappa2", "Delta")
-    )
-)
-
-basic_content <- wellPanel(
-    p(basic_text),
-    numericInput("rep", "Number of Runs", value = 1, min = 1, step = 1),
-    numericInput("time", "Simulation Time (hours)", value = 100, step = 1),
+general_content <- wellPanel(
+    HTML(general_text),
+    numericInput("rep", "Number of Runs", value = 10, min = 1, step = 1),
+    numericInput("time", "Simulation Time (hours)", value = 60, step = 1),
     numericInput("dt", "Granularity (hours)", value = 0.1, step = 0.1),
     checkboxInput("deterministic", "Deterministic Model", FALSE),
-    checkboxInput("cycl", "Cycle between drugs", TRUE),
-    numericInput("seed", "Random Seed", value = NULL)
+    checkboxInput("cycl", "Cycle between drugs", FALSE),
+    numericInput("seed", "Random Seed", value = NULL),
+    numericInput("HGT", "recombination rate", value = 0, min = 0, step = 1e-15)
 )
 
 drugs_content <- wellPanel(
     p(drugs_text),
-    matrixInput("drugs", value = drugs_default, class = "numeric"),
-    numericInput("bactericidal", "Drug mode (bactericidal = 1 to
-     bacteriostatic = 0)", value = 1, min = 0, max = 1, step = 1),
-    numericInput("HGT", "recombination rate", value = 0, min = 0, step = 1e-15)
+    withMathJax(matrixInput("drugs", value = drugs_default, class = "numeric"))
 )
 
-growth_content <- wellPanel(
-    p(growth_text),
-    matrixInput("growth", value = growth_default, class = "numeric")
+bacteria_content <- wellPanel(
+    p(bacteria_text),
+    withMathJax(matrixInput("bacteria", value = bacteria_default, class = "numeric"))
 )
 
 events_content <- wellPanel(
     p(events_text),
-    numericInput("tau", "Bottleneck frequency (hours)", value = 10, step = 1),
-    numericInput("R0", "Bottleneck Resource pulse", value = "1e15", step = 1e9),
-    numericInput("supply", "Resource supply rate (hours^-1)", value = 0, step = 1e9),
+    numericInput("tau", "Bottleneck period (hours)", value = "1e4", step = 1),
+    numericInput("R0", "Media resource concentration", value = "1e11", step = 1e9),
+    numericInput("supply", "Resource supply rate (hours^-1)", value = "1e8", step = 1e9),
     numericInput("D", "Bottleneck Dilution fraction", value = 1e-1, step = 0.1),
-    numericInput("dose_gap", "Gap between doses (hours)", value = 10, step = 1),
+    numericInput("dose_gap", "Dosing period (hours)", value = 10, step = 1),
     numericInput("dose_rep", "Drug cycling period (doses)", value = 1, step = 1),
     checkboxInput("keep_old_drugs", "Old drugs persist through dosing", TRUE),
-)
-
-pd_content <- wellPanel(
-    p(pd_text),
-    matrixInput("pd", value = pd_default, class = "numeric")
 )
 
 graph_content <- tagList(
@@ -151,11 +128,10 @@ ui <- fluidPage(
         id = "everything",
         mainPanel(
             tabsetPanel(
-                tabPanel("Basic", fluidRow(column(6, basic_content))),
+                tabPanel("General", fluidRow(column(6, general_content))),
                 tabPanel("Drugs", fluidRow(column(6, drugs_content))),
-                tabPanel("Growth", fluidRow(column(6, growth_content))),
+                tabPanel("Bacteria", fluidRow(column(6, bacteria_content))),
                 tabPanel("Events", fluidRow(column(6, events_content))),
-                tabPanel("Pharmacodynamics", fluidRow(column(12, pd_content))),
                 tabPanel("Graph", graph_content)
             )
         )
@@ -165,10 +141,11 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     # Create a reactive expression for the simulation results
     simulation_result <- eventReactive(input$run_simulation, {
+        names <- c("N_S", "N_A", "N_B", "N_AB")
         simulate(
             rep = input$rep,
             deterministic = input$deterministic,
-            seed = input$seed,
+            seed = if (is.na(input$seed)) NULL else input$seed,
             cycl = input$cycl,
             dose_rep = input$dose_rep,
             dose_gap = input$dose_gap,
@@ -177,26 +154,26 @@ server <- function(input, output, session) {
             tau = input$tau,
             dt = input$dt,
             R0 = input$R0,
+            supply = input$supply,
             D = input$D,
             HGT = input$HGT,
-            m_A = input$drugs["A", "Mutation rate"],
-            m_B = input$drugs["B", "Mutation rate"],
-            d_A = input$drugs["A", "Elimination rate"],
-            d_B = input$drugs["B", "Elimination rate"],
-            influx = setNames(input$drugs[, "Influx"], c("C_A", "C_B")),
-            init = input$growth[, c("Init")],
-            bcidal_A = input$pd[, "Bcidal1"],
-            bstatic_A = input$pd[, "Bstatic1"],
-            zeta_A = input$pd[, "Zeta1"],
-            kappa_A = input$pd[, "Kappa1"],
-            bcidal_B = input$pd[, "Bcidal2"],
-            bstatic_B = input$pd[, "Bstatic2"],
-            zeta_B = input$pd[, "Zeta2"],
-            kappa_B = input$pd[, "Kappa2"],
-            delta = input$pd[, "Delta"],
-            mu = input$growth[, "Mu"],
-            k = input$growth[, "K"],
-            alpha = input$growth[, "Alpha"]
+            m_A = input$drugs["A", "\\(m_j\\)"],
+            m_B = input$drugs["B", "\\(m_j\\)"],
+            d_A = input$drugs["A", "\\(\\gamma_j\\)"],
+            d_B = input$drugs["B", "\\(\\gamma_j\\)"],
+            influx = setNames(input$drugs[, "\\(C_j(0)\\)"], c("C_A", "C_B")),
+            init = setNames(input$bacteria[, c("\\(N_i(0)\\)")], names),
+            bcidal_A = input$drugs["A", "\\(\\theta_j\\)"],
+            bstatic_A = input$drugs["A", "\\(\\phi_j\\)"],
+            zeta_A = setNames(input$bacteria[, "\\(z_{i,A}\\)"], names),
+            kappa_A = input$drugs["A", "\\(\\beta_j\\)"],
+            bcidal_B = input$drugs["B", "\\(\\theta_j\\)"],
+            bstatic_B = input$drugs["B", "\\(\\phi_j\\)"],
+            zeta_B = setNames(input$bacteria[, "\\(z_{i,B}\\)"], names),
+            kappa_B = input$drugs["B", "\\(\\beta_j\\)"],
+            delta = input$bacteria[, "\\(\\delta_i\\)"],
+            mu = input$bacteria[, "\\(\\mu_i\\)"],
+            k = input$bacteria[, "\\(K_i\\)"]
         )
     })
     output$plot <- renderPlot({
@@ -211,12 +188,11 @@ server <- function(input, output, session) {
         shinyjs::reset("everything")
         # update the matrices to use default values
         updateMatrixInput(session, inputId = "drugs", value = drugs_default)
-        updateMatrixInput(session, inputId = "growth", value = growth_default)
-        updateMatrixInput(session, inputId = "pd", value = pd_default)
+        updateMatrixInput(session, inputId = "bacteria", value = bacteria_default)
     })
 }
 
 # Run the application
 shinyApp(ui = ui, server = server)
 
-# To deploy the app use deployApp()
+# To deploy the app use deployApp(appName = "AMR-evolution")
