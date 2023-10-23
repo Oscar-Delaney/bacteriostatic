@@ -113,7 +113,7 @@ graph_content <- tagList(
         ),
         selected = "all"
     ),
-    plotOutput("plot", height = "800", width = "100%")
+    plotOutput("plot", height = "600", width = "100%")
 )
 
 # UI
