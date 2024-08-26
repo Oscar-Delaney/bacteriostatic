@@ -247,3 +247,22 @@ further <- rbind(
 pdf("figs/further.pdf", width = 20, height = 25)
 main_plot(further, titles = FALSE)
 dev.off()
+
+### Figure dynamics
+summary <- expand.grid(bcidal_A = 1, bcidal_B = 1,
+    therapy = c("Cycling", "Combination"), resources = "Abundant")
+
+comb_results <- run_sims(summary[2, ], rep = 1e1, data = TRUE)
+comb_graph <- log_plot(comb_results, use = c("N_S", "N_A", "N_B", "N_AB", "R")) +
+    annotate("text", x = 0, y = Inf, label = "A", hjust = 0.8, vjust = 1.5,
+        size = 15, fontface = "bold")
+
+cycl_results <- run_sims(summary[1, ], rep = 1e1, data = TRUE)
+cycl_graph <- log_plot(cycl_results, use = c("N_S", "N_A", "N_B", "N_AB", "R")) +
+    annotate("text", x = 0, y = Inf, label = "B", hjust = 0.8, vjust = 1.5,
+        size = 15, fontface = "bold")
+
+# print as a pdf
+pdf("figs/dynamics.pdf", width = 20, height = 10)
+comb_graph | cycl_graph
+dev.off()
