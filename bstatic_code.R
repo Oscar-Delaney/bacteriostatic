@@ -263,7 +263,8 @@ cycl_graph <- log_plot(cycl_results, use = c("N_S", "N_A", "N_B", "N_AB", "R")) 
     annotate("text", x = 0, y = Inf, label = "B", hjust = 0.8, vjust = 1.5,
         size = 15, fontface = "bold") +
     theme(legend.position = "right",
-          legend.box = "vertical")
+          legend.box = "vertical") +
+    guides(color = guide_legend(order = 1))  # Strains legend first
 
 # print as a pdf
 pdf("figs/dynamics.pdf", width = 20, height = 10)

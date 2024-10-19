@@ -313,7 +313,8 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
         aes(xmin = xmin, xmax = xmax, ymin = peak * 10^0.6,
           ymax = peak * 10^0.8, fill = C_A), color = NA, alpha = 1) +
       scale_fill_gradient(low = "white", high = colors[2],
-        limits = c(0, 1), name = expression(C[A]), labels = NULL)
+        limits = c(0, 1), name = expression(C[A]), labels = NULL,
+        guide = guide_colorbar(direction = "horizontal"))
   }
   # If drug B is present add the drug B rectangles
   if (max(background_df$C_B) > 0) {
@@ -323,7 +324,8 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
         aes(xmin = xmin, xmax = xmax, ymin = peak * 10^0.8,
           ymax = peak * 10^1, fill = C_B), color = NA, alpha = 1) +
       scale_fill_gradient(low = "white", high = colors[3],
-        limits = c(0, 1), name = expression(C[B]), labels = NULL)
+        limits = c(0, 1), name = expression(C[B]), labels = NULL,
+        guide = guide_colorbar(direction = "horizontal"))
   }
   # Display the plot
   return(plot)
