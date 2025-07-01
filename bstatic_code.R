@@ -55,7 +55,7 @@ init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
         wins <- 1 - target_hit(sol)
         summary[i, c("wins", "ymin", "ymax")] <- c(mean(wins),
             binom.test(sum(wins), length(wins))$conf.int)
-        print(i / nrow(summary))
+        cat(paste0(i, "/", nrow(summary), "\n"))
     }
     if (data) {
         return(sol)
