@@ -210,7 +210,7 @@ summary <- expand.grid(
     mult_delta = c(0.9, 1.1),
     mult_alpha = c(0.9, 1.1)
 )
-sensitivity <- run_sims(summary, rep = 1e3)
+sensitivity <- run_sims(summary, rep = 1e2)
 
 #TODO: Make a proper plot of this.
 #pdf("figs/sensitivity.pdf", width = 20, height = 25)
