@@ -19,6 +19,16 @@ run_sims <- function(summary, zeta_A = c(N_S = 1, N_A = 28, N_B = 1, N_AB = 28),
 zeta_B = c(N_S = 1, N_A = 1, N_B = 28, N_AB = 28), delta = 0.25, rep = 1, dose_gap = 10,
 influx = 3 * c(C_A = 1, C_B = 1), m_A = 1e-9, m_B = 1e-9, d_ = 0, init_A = 0,
 init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
+    get_mult <- function(var, i) {
+        varname <- paste0("mult_", var)
+        return(ifelse(is.null(summary[i, varname]), 1, summary[i, varname]))
+    }
+    adjust_zeta <- function(zeta, drug, resistance_multiplier) { # `drug` should be "A" or "B"
+        zeta[paste0("N_", drug)] <- zeta[paste0("N_", drug)] * resistance_multiplier
+        zeta["N_AB"] <- zeta["N_AB"] * resistance_multiplier
+        return(zeta)
+    }
+
     summary$bstatic_A <- 1 - summary$bcidal_A
     summary$bstatic_B <- 1 - summary$bcidal_B
     for (i in seq_len(nrow(summary))) {
@@ -29,26 +39,27 @@ init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
         sol <- simulate(
             seed = i * 1e5,
             init = c(N_S = ifelse(cycl, 5e8, 1e10),
-              N_A = init_A, N_B = init_B, N_AB = 0),
+              N_A = init_A, N_B = init_B, N_AB = 0) * get_mult("init", i),
             R0 = R0 * 10 ^ res,
-            k = 1e8,
-            alpha = 1,
+            k = 1e8 * get_mult("k", i),
+            alpha = 1 * get_mult("delta", i),
             supply = 1e8,
-            mu = 1,
+            mu = 1 * get_mult("mu", i),
             bcidal_A = summary$bcidal_A[i],
             bcidal_B = summary$bcidal_B[i],
             bstatic_A = summary$bstatic_A[i],
             bstatic_B = summary$bstatic_B[i],
-            zeta_A = zeta_A,
-            zeta_B = zeta_B,
-            delta = delta + res * 0.05,
+            zeta_A = adjust_zeta(zeta_A, "A", get_mult("resistance_zeta", i)),
+            zeta_B = adjust_zeta(zeta_B, "B", get_mult("resistance_zeta", i)),
+            delta = (delta + res * 0.05) * get_mult("delta", i),
             time = 60,
             tau = 1e4,
             rep = rep,
             dose_gap = dose_gap,
-            influx =  influx * (1 + !cycl),
+            influx =  influx * (1 + !cycl) * get_mult("influx", i),
             cycl = cycl,
-            m_A = m_A, m_B = m_B,
+            m_A = m_A * get_mult("mutation_rate", i),
+            m_B = m_B * get_mult("mutation_rate", i),
             i_A_B = i_A_B, i_B_A = i_B_A,
             d_A = d, d_B = d
         )[[1]]
@@ -182,6 +193,31 @@ main_plot(multi)
 dev.off()
 
 save(multi, file = "figs/fig2.rdata")
+
+### Parameter sensitivity test
+summary <- expand.grid(
+    bcidal_A = c(0, 1), # Outer limits of figure 2.
+    bcidal_B = c(0, 1), # Outer limits of figure 2.
+    therapy = c("Combination", "Cycling"), # Same as figure 2.
+    resources = c("Abundant", "Intermediate", "Limiting"), # Same as figure 2.
+    mult_init = c(0.1, 10),
+    mult_mutation_rate = c(0.1, 10),
+    mult_influx = c(0.5, 2),
+    #TODO: Do we also want to vary drug elimination rate?
+    mult_resistance_zeta = c(0.5, 2),
+    mult_mu = c(0.9, 1.1),
+    mult_k = c(0.9, 1.1),
+    mult_delta = c(0.9, 1.1),
+    mult_alpha = c(0.9, 1.1)
+)
+sensitivity <- run_sims(summary, rep = 1e3)
+
+#TODO: Make a proper plot of this.
+#pdf("figs/sensitivity.pdf", width = 20, height = 25)
+#main_plot(sensitivity)
+#dev.off()
+
+save(sensitivity, file = "figs/sensitivity.rdata")
 
 ### Figure S1
 summary <- subset(summary, therapy == "Cycling" & resources == "Abundant")
