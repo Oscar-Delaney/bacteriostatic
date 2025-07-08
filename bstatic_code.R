@@ -200,15 +200,15 @@ summary <- expand.grid(
     bcidal_B = c(0, 1), # Outer limits of figure 2.
     therapy = c("Combination", "Cycling"), # Same as figure 2.
     resources = c("Abundant", "Intermediate", "Limiting"), # Same as figure 2.
-    mult_init = c(0.1, 10),
-    mult_mutation_rate = c(0.1, 10),
-    mult_influx = c(0.5, 2),
+    mult_init = c(0.1, 1, 10),
+    mult_mutation_rate = c(0.1, 1, 10),
+    mult_influx = c(0.5, 1, 2),
     #TODO: Do we also want to vary drug elimination rate?
-    mult_resistance_zeta = c(0.5, 2),
-    mult_mu = c(0.9, 1.1),
-    mult_k = c(0.9, 1.1),
-    mult_delta = c(0.9, 1.1),
-    mult_alpha = c(0.9, 1.1)
+    mult_resistance_zeta = c(0.5, 1, 2),
+    mult_mu = c(0.9, 1, 1.1),
+    mult_k = c(0.9, 1, 1.1),
+    mult_delta = c(0.9, 1, 1.1),
+    mult_alpha = c(0.9, 1, 1.1)
 )
 sensitivity <- run_sims(summary, rep = 1e2)
 
