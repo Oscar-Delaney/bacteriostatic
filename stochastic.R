@@ -116,6 +116,8 @@ ode_rates <- function(t, state, config) {
 # a function to implement one run of the model
 single_run <- function(config, x) {
   with(config, {
+    # set the seed for reproducibility
+    if (is.numeric(seed)) set.seed(seed + x)
     # Define the transitions of the model
     transitions <- make_transitions()
     # Initialise the state variables
@@ -131,8 +133,6 @@ single_run <- function(config, x) {
         times <- c(time_grid[time_grid <= end], end) # ensures length(times) > 1
         new <- ode(state, times, ode_rates, config)
       } else {
-        # set the seed for reproducibility
-        if (is.numeric(seed)) set.seed(seed + x * length(events) + which(events == t))
         new <- ssa.adaptivetau(
           state, transitions, rates, config, tf = end,
           tl.params = list(maxtau = max_step),
