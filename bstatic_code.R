@@ -212,10 +212,54 @@ summary <- expand.grid(
 )
 sensitivity <- run_sims(summary, rep = 1e2)
 
-#TODO: Make a proper plot of this.
-#pdf("figs/sensitivity.pdf", width = 20, height = 25)
-#main_plot(sensitivity)
-#dev.off()
+set.seed(42)
+sensitivity_wide <- sensitivity |>
+    tidyr::pivot_wider(
+        id_cols = c(therapy, resources, names(sensitivity)[grep("mult_", names(sensitivity))]),
+        names_from = c(bcidal_A, bcidal_B),
+        names_glue = "{ifelse(bcidal_A == 1, 'bcidal', 'bstatic')}_{ifelse(bcidal_B == 1, 'bcidal', 'bstatic')}",
+        values_from = wins
+    )
+sensitivity_wide$outcome <- dplyr::select(sensitivity_wide, tidyselect::matches("b[^_]*_b[^_]*")) |>
+    apply(1, function(x) {
+        if(all(x == 0)) {
+            return("always_survives")
+        }
+        if(all(x == 1)) {
+            return("always_extinct")
+        }
+        max_case <- seq_along(x)[x == max(x)]
+        if(length(max_case) > 1) {
+            max_case <- sample(max_case, 1)
+        }
+        return(names(x)[max_case])
+    }) |>
+    unlist()
+sensitivity_plot <- ggplot(sensitivity_wide) +
+    geom_bar(aes(x = paste(therapy, resources, sep = "\n"), fill = outcome)) +
+    labs(x = "Therapy type & resource availability", y = "Frequency", fill = "Best combination") +
+    scale_fill_manual(
+        labels = c(
+            "always_survives" = "None (Always Survives)",
+            "always_extinct" = "None (Always Extinct)",
+            "bcidal_bcidal" = "Cidal/Cidal",
+            "bcidal_bstatic" = "Cidal/Static",
+            "bstatic_bcidal" = "Static/Cidal",
+            "bstatic_bstatic" = "Static/Static"
+        ),
+        values = c(
+            "always_survives" = "#888888",
+            "always_extinct" = "#555555",
+            "bcidal_bcidal" = "#482173",
+            "bcidal_bstatic" = "#25858E",
+            "bstatic_bcidal" = "#2BB07F",
+            "bstatic_bstatic" = "#C2DF23"
+        )
+    ) +
+    scale_y_continuous(expand = c(0, 0))
+pdf("figs/sensitivity.pdf", width = 8, height = 7)
+print(sensitivity_plot)
+dev.off()
 
 save(sensitivity, file = "figs/sensitivity.rdata")
 
