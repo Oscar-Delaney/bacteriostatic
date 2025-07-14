@@ -16,52 +16,52 @@ target_hit <- function(sol, target = 1e2, strains = c("N_A", "N_B")) {
 
 # Run many simulations with prespecified parameters
 run_sims <- function(summary, zeta_A = c(N_S = 1, N_A = 28, N_B = 1, N_AB = 28),
-zeta_B = c(N_S = 1, N_A = 1, N_B = 28, N_AB = 28), delta = 0.25, rep = 1, dose_gap = 10,
-influx = 3 * c(C_A = 1, C_B = 1), m_A = 1e-9, m_B = 1e-9, d_ = 0, init_A = 0,
-init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
-    summary$bstatic_A <- 1 - summary$bcidal_A
-    summary$bstatic_B <- 1 - summary$bcidal_B
-    for (i in seq_len(nrow(summary))) {
-        cycl <- ifelse(summary$therapy[i] == "Cycling", TRUE, FALSE)
-        res <- switch(as.character(summary$resources[i]),
-            "Abundant" = 3, "Intermediate" = 1.5, "Limiting" = 0)
-        d <- d_ + ifelse(cycl, 0.1, 0.35)
-        sol <- simulate(
-            seed = i * 1e5,
-            init = c(N_S = ifelse(cycl, 5e8, 1e10),
-              N_A = init_A, N_B = init_B, N_AB = 0),
-            R0 = R0 * 10 ^ res,
-            k = 1e8,
-            alpha = 1,
-            supply = 1e8,
-            mu = 1,
-            bcidal_A = summary$bcidal_A[i],
-            bcidal_B = summary$bcidal_B[i],
-            bstatic_A = summary$bstatic_A[i],
-            bstatic_B = summary$bstatic_B[i],
-            zeta_A = zeta_A,
-            zeta_B = zeta_B,
-            delta = delta + res * 0.05,
-            time = 60,
-            tau = 1e4,
-            rep = rep,
-            dose_gap = dose_gap,
-            influx =  influx * (1 + !cycl),
-            cycl = cycl,
-            m_A = m_A, m_B = m_B,
-            i_A_B = i_A_B, i_B_A = i_B_A,
-            d_A = d, d_B = d
-        )[[1]]
-        wins <- 1 - target_hit(sol)
-        summary[i, c("wins", "ymin", "ymax")] <- c(mean(wins),
-            binom.test(sum(wins), length(wins))$conf.int)
-        print(i / nrow(summary))
-    }
-    if (data) {
-        return(sol)
-    } else {
-        return(summary)
-    }
+                     zeta_B = c(N_S = 1, N_A = 1, N_B = 28, N_AB = 28), delta = 0.25, rep = 1, dose_gap = 10,
+                     influx = 3 * c(C_A = 1, C_B = 1), m_A = 1e-9, m_B = 1e-9, d_ = 0, init_A = 0,
+                     init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
+  summary$bstatic_A <- 1 - summary$bcidal_A
+  summary$bstatic_B <- 1 - summary$bcidal_B
+  for (i in seq_len(nrow(summary))) {
+    cycl <- ifelse(summary$therapy[i] == "Cycling", TRUE, FALSE)
+    res <- switch(as.character(summary$resources[i]),
+                  "Abundant" = 3, "Intermediate" = 1.5, "Limiting" = 0)
+    d <- d_ + ifelse(cycl, 0.1, 0.35)
+    sol <- simulate(
+      seed = i * 1e5,
+      init = c(N_S = ifelse(cycl, 5e8, 1e10),
+               N_A = init_A, N_B = init_B, N_AB = 0),
+      R0 = R0 * 10 ^ res,
+      k = 1e8,
+      alpha = 1,
+      supply = 1e8,
+      mu = 1,
+      bcidal_A = summary$bcidal_A[i],
+      bcidal_B = summary$bcidal_B[i],
+      bstatic_A = summary$bstatic_A[i],
+      bstatic_B = summary$bstatic_B[i],
+      zeta_A = zeta_A,
+      zeta_B = zeta_B,
+      delta = delta + res * 0.05,
+      time = 60,
+      tau = 1e4,
+      rep = rep,
+      dose_gap = dose_gap,
+      influx =  influx * (1 + !cycl),
+      cycl = cycl,
+      m_A = m_A, m_B = m_B,
+      i_A_B = i_A_B, i_B_A = i_B_A,
+      d_A = d, d_B = d
+    )[[1]]
+    wins <- 1 - target_hit(sol)
+    summary[i, c("wins", "ymin", "ymax")] <- c(mean(wins),
+                                               binom.test(sum(wins), length(wins))$conf.int)
+    print(i / nrow(summary))
+  }
+  if (data) {
+    return(sol)
+  } else {
+    return(summary)
+  }
 }
 
 # Create some helper plots for annotation
@@ -137,15 +137,22 @@ main_plot <- function(summary, titles = TRUE) {
 }
 
 ### Figure 1
+
 summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = 0,
-    therapy = "Cycling", resources = "Abundant")
+                       therapy = "Cycling", resources = "Abundant")
+# Figure 1A:
 sol <- run_sims(summary[nrow(summary), ], rep = 1e1,
-    influx = c(C_A = 6, C_B = 0), dose_gap = 5, m_B = 0, data = TRUE)
-dynamics <- log_plot(sol, use = c("N_S", "N_A", "R")) +
-    annotate("text", x = 0, y = Inf, label = "A", hjust = 0.5, vjust = 1.5,
-        size = 15, fontface = "bold")
-mono_high_res <- run_sims(summary, rep = 1e3,
-    influx = c(C_A = 6, C_B = 0), dose_gap = 5, m_B = 0)
+                influx = c(C_A = 6, C_B = 0), dose_gap = 5, m_B = 0, data = TRUE)
+dynamics <- log_plot(sol, use = c("N_S", "N_A", "R")) #+
+  # annotate("text", x = 0, y = Inf, label = "A", hjust = 0.5, vjust = 1.5,
+  #          size = 15, fontface = "bold")
+
+# Figure 1B:
+# mono_high_res <- run_sims(summary, rep = 1e3,
+#     influx = c(C_A = 6, C_B = 0), dose_gap = 5, m_B = 0)
+# save(mono_high_res, file = "figs/fig1.rdata")
+load("figs/fig1.rdata")
+
 mono <- ggplot(mono_high_res, aes(x = bcidal_A, y = wins)) +
     geom_point(size = 3) +
     geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
@@ -159,18 +166,104 @@ mono <- ggplot(mono_high_res, aes(x = bcidal_A, y = wins)) +
         axis.title = element_text(size = 35),
         axis.text = element_text(size = 25),
         plot.margin = unit(c(0, 0, 0, 2), "cm")
-    ) +
-    annotate("text", x = 0, y = Inf, label = "B", hjust = 1, vjust = 1.5,
-        size = 15, fontface = "bold")
-right <- mono / bottom_plot + plot_layout(heights = c(9, 1))
-left <- dynamics / blank_plot + plot_layout(heights = c(1, 0))
+    ) 
+    # annotate("text", x = 0, y = Inf, label = "B", hjust = 1, vjust = 1.5,
+    #     size = 15, fontface = "bold")
+
+# Figure 1C:
+# figure for JTB revision to check analytical results:
+# summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = 0,
+#                        therapy = "Cycling", resources = "Abundant")
+# mono_check_analytical <- run_sims(summary, rep = 1,
+#          zeta_A = c(N_S = 1, N_A = 1e6, N_B = 1, N_AB = 1e6),
+#          zeta_B = c(N_S = 1, N_A = 1, N_B = 1e6, N_AB = 1e6), 
+#          delta = 0.25, dose_gap = 100,
+#          influx = c(C_A = 6, C_B = 0), 
+#          m_A = 1e-9, m_B = 0, 
+#          d_ = -0.1, init_A = 0,
+#          init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = TRUE)
+# save(mono_check_analytical, file = "figs/mono_check_analytical.rdata")
+load("figs/mono_check_analytical.rdata")
+
+analytical_Pext <- function(m, S0, g, delta, E, phi, theta) {
+  return(exp(-m*S0*(g-delta)*(1-E*phi)/(delta+E*theta-g*(1-E*phi))))
+}
+
+Emax <- function(C, z, beta) {
+  return(1 / (1 + (C / z)^(-beta)))
+}
+
+growth <- function(R, mu, K) {
+  return(mu * R / (R + K))
+}
+
+analytical <- data.frame(bcidal_A = seq(0, 1, 0.01),
+                         bstatic_A = NA,
+                         Pext = NA)
+analytical$bstatic_A <- 1 - analytical$bcidal_A
+analytical$Pext <- analytical_Pext(m = 1e-9,
+                                   S0 = 5e8,
+                                   g = growth(R = 1e11, mu = 1, K = 1e8),
+                                   delta = 0.4,
+                                   E = Emax(C = 6, z = 1, beta = 1),
+                                   phi = analytical$bstatic_A,
+                                   theta = analytical$bcidal_A)
+
+p_analytical <- ggplot(mapping = aes(x = bcidal_A, y = wins)) +
+  geom_point(data = mono_check_analytical, size = 3) +
+  geom_errorbar(data = mono_check_analytical,
+                mapping = aes(ymin = ymin, ymax = ymax)) +
+  geom_line(data = analytical, 
+            aes(x = bcidal_A, y = Pext), col = "blue") +
+  scale_y_continuous(limits = c(0, 1)) +
+  theme_light() +
+  labs(
+    x = NULL,
+    y = "P(extinct)"
+  ) +
+  theme(
+    axis.title = element_text(size = 35),
+    axis.text = element_text(size = 25),
+    plot.margin = unit(c(0, 0, 0, 2), "cm")
+  )
+# annotate("text", x = 0, y = Inf, label = "B", hjust = 1, vjust = 1.5,
+#          size = 15, fontface = "bold")
+
+
+# Final figure:
+design <- "
+  123
+  145
+"
+
+design <- c(
+  area(1, 1, 2, 1),
+  area(1, 2),
+  area(1, 3),
+  area(2, 2),
+  area(2, 3)
+)
+
+plot(design)
+
+p <- dynamics + mono + p_analytical + bottom_plot + bottom_plot + 
+  plot_layout(design = design)
+
+p <- (dynamics | 
+  (mono / bottom_plot + plot_layout(heights = c(9, 1))) |
+  (p_analytical / bottom_plot + plot_layout(heights = c(9, 1)))) +
+  plot_layout(heights = c(1, 1, 1))
+
+
+ggsave("figs/fig1_revised.pdf", p, height = 12, width = 24)
+
 
 # print as a pdf
-pdf("figs/fig1.pdf", width = 20, height = 10)
+pdf("figs/fig1.pdf", width = 24, height = 10)
 left | right
 dev.off()
 
-save(mono_high_res, file = "figs/fig1.rdata")
+
 
 ### Figure 2
 summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = seq(0, 1, 0.05),
@@ -271,3 +364,4 @@ pdf("figs/dynamics.pdf", width = 20, height = 10)
 comb_graph + cycl_graph +
     plot_layout(widths = c(1, 1.05), guides = "collect")
 dev.off()
+
