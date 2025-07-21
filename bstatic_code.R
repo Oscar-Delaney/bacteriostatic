@@ -237,8 +237,8 @@ sensitivity_wide$outcome <- dplyr::select(sensitivity_wide, tidyselect::matches(
     unlist()
 sensitivity_plot <- sensitivity_wide |>
     dplyr::group_by(therapy, resources, outcome) |>
-    summarise(count = dplyr::n(), .groups = "drop_last") |>
-    mutate(proportion = count / sum(count)) |>
+    dplyr::summarise(count = dplyr::n(), .groups = "drop_last") |>
+    dplyr::mutate(proportion = count / sum(count)) |>
     ggplot() +
     geom_bar(aes(x = paste(therapy, resources, sep = "\n"), y = proportion, fill = outcome), stat = "identity") +
     labs(x = "Therapy type & resource availability", y = "Proportion of parameter combinations", fill = "Best combination") +
