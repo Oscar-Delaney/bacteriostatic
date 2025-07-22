@@ -298,7 +298,7 @@ sensitivity_breakdown_plot <- do.call(rbind,
         ), default = label_parsed))
     ) +
     theme(panel.spacing.y = unit(1, "lines"))
-pdf("figs/sensitivity_breakdown.pdf", width = 24, height = 56)
+pdf("figs/sensitivity_breakdown.pdf", width = 18, height = 27)
 print(sensitivity_breakdown_plot)
 dev.off()
 
