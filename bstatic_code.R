@@ -235,34 +235,71 @@ sensitivity_wide$outcome <- dplyr::select(sensitivity_wide, tidyselect::matches(
         return(names(x)[max_case])
     }) |>
     unlist()
+
+create_sensitivity_plot <- function(dat) {
+    ggplot(dat) +
+        geom_bar(aes(x = paste(therapy, resources, sep = "\n"), y = proportion, fill = outcome), stat = "identity") +
+        labs(x = "Therapy type & resource availability", y = "Proportion of parameter combinations", fill = "Best combination") +
+        scale_fill_manual(
+            labels = c(
+                "always_survives" = "None (Always Survives)",
+                "always_extinct" = "None (Always Extinct)",
+                "bcidal_bcidal" = "Cidal/Cidal",
+                "bcidal_bstatic" = "Cidal/Static",
+                "bstatic_bcidal" = "Static/Cidal",
+                "bstatic_bstatic" = "Static/Static"
+            ),
+            values = c(
+                "always_survives" = "#888888",
+                "always_extinct" = "#555555",
+                "bcidal_bcidal" = "#482173",
+                "bcidal_bstatic" = "#25858E",
+                "bstatic_bcidal" = "#2BB07F",
+                "bstatic_bstatic" = "#C2DF23"
+            )
+        ) +
+        scale_y_continuous(expand = c(0, 0))
+}
+
 sensitivity_plot <- sensitivity_wide |>
     dplyr::group_by(therapy, resources, outcome) |>
     dplyr::summarise(count = dplyr::n(), .groups = "drop_last") |>
     dplyr::mutate(proportion = count / sum(count)) |>
-    ggplot() +
-    geom_bar(aes(x = paste(therapy, resources, sep = "\n"), y = proportion, fill = outcome), stat = "identity") +
-    labs(x = "Therapy type & resource availability", y = "Proportion of parameter combinations", fill = "Best combination") +
-    scale_fill_manual(
-        labels = c(
-            "always_survives" = "None (Always Survives)",
-            "always_extinct" = "None (Always Extinct)",
-            "bcidal_bcidal" = "Cidal/Cidal",
-            "bcidal_bstatic" = "Cidal/Static",
-            "bstatic_bcidal" = "Static/Cidal",
-            "bstatic_bstatic" = "Static/Static"
-        ),
-        values = c(
-            "always_survives" = "#888888",
-            "always_extinct" = "#555555",
-            "bcidal_bcidal" = "#482173",
-            "bcidal_bstatic" = "#25858E",
-            "bstatic_bcidal" = "#2BB07F",
-            "bstatic_bstatic" = "#C2DF23"
-        )
-    ) +
-    scale_y_continuous(expand = c(0, 0))
+    create_sensitivity_plot()
 pdf("figs/sensitivity.pdf", width = 8, height = 7)
 print(sensitivity_plot)
+dev.off()
+
+sensitivity_breakdown_plot <- do.call(rbind,
+    lapply(names(sensitivity_wide)[grep("^mult_", names(sensitivity_wide))], function(mult_var_name) {
+        sensitivity_wide |>
+            dplyr::group_by(therapy, resources, !!rlang::sym(mult_var_name), outcome) |>
+            dplyr::summarise(count = dplyr::n(), .groups = "drop_last") |>
+            dplyr::mutate(proportion = count / sum(count)) |>
+            dplyr::rename(mult_var_value = !!rlang::sym(mult_var_name)) |>
+            dplyr::mutate(mult_var_name = mult_var_name)
+    }
+)) |>
+    dplyr::mutate(mult_var_value = factor(ifelse(mult_var_value == 1, "Unchanged", ifelse(mult_var_value < 1, "Decreased", "Increased")), levels = c("Decreased", "Unchanged", "Increased"), ordered = TRUE)) |>
+    dplyr::mutate(mult_var_name = factor(mult_var_name, levels = c("mult_init", "mult_mutation_rate", "mult_influx", "mult_resistance_zeta", "mult_mu", "mult_k", "mult_delta", "mult_alpha"), ordered = TRUE)) |>
+    create_sensitivity_plot() +
+    facet_grid(
+        rows = vars(mult_var_name),
+        cols = vars(mult_var_value),
+        labeller = labeller(mult_var_name = as_labeller(c(
+            mult_init = "N(0)",
+            mult_mutation_rate = "m",
+            mult_influx = "C(0)",
+            mult_resistance_zeta = "z",
+            mult_mu = "mu",
+            mult_k = "K",
+            mult_delta = "delta",
+            mult_alpha = "alpha"
+        ), default = label_parsed))
+    ) +
+    theme(panel.spacing.y = unit(1, "lines"))
+pdf("figs/sensitivity_breakdown.pdf", width = 24, height = 56)
+print(sensitivity_breakdown_plot)
 dev.off()
 
 save(sensitivity, file = "figs/sensitivity.rdata")
