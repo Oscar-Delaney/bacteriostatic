@@ -181,8 +181,13 @@ server <- function(input, output, session) {
         )
     })
     output$plot <- renderPlot({
+        progress <- shiny::Progress$new()
+        on.exit(progress$close())
+        progress$set(message = "Running simulation", value = 0)
+        
         # Check if the simulation_result has been executed
         if (!is.null(simulation_result())) {
+            progress$set(message = "Generating plot", value = 1)
             # Create a plot of the simulation results
             log_plot(simulation_result()[[1]], type = input$display)
         }
