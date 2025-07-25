@@ -306,7 +306,7 @@ all_dynamics_results <- lapply(seq(nrow(summary)), function(i) {
         data = TRUE
     )
 })
-save(all_dynamics_results, file = "figs/all-dynamics.rdata")
+save(all_dynamics_results, file = "figs/all_dynamics.rdata")
 
 all_dynamics_plots <- lapply(seq_along(all_dynamics_results), function(i) {
     lapply(unique(all_dynamics_results[[i]]$rep), function(j) {
@@ -318,7 +318,7 @@ all_dynamics_plots <- lapply(seq_along(all_dynamics_results), function(i) {
 })
 
 # print as a pdf
-pdf("figs/all-dynamics.pdf", width = 20, height = 20)
+pdf("figs/all_dynamics.pdf", width = 20, height = 20)
 Reduce(`+`, flatten(all_dynamics_plots)) +
     plot_layout(
         ncol = n_cols,
