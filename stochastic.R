@@ -258,7 +258,7 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
     arrange(variable)
   num_reps <- length(unique(filtered$rep))
   # Initialise the colours
-  colors <- c("black", "navy", "#800000", "#008000", "gold")
+  colors <- palette.colors(palette = "R4")[c(1,4,2,3,8)]
   # Create antibiotic concentrations data frame
   background_df <- solutions %>%
     filter(rep == min(rep) & variable %in% c("C_A", "C_B")) %>%
