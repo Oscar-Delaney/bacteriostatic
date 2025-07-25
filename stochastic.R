@@ -297,7 +297,8 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
       axis.title = element_text(size = 35),
       axis.text = element_text(size = 25),
       legend.title = element_text(size = 20),
-      legend.text = element_text(size = 20)
+      legend.text = element_text(size = 20),
+      panel.grid.minor.y = element_blank()
     )
   # Add the confidence intervals
   if (type %in% c("mean", "median") && num_reps > 1) {
