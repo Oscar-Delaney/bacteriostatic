@@ -121,8 +121,8 @@ ui <- fluidPage(
     useShinyjs(),
     titlePanel("Stochastic Simulation of Antibiotic Resistance"),
     p(
-    actionButton("run_simulation", "Run Simulation"),
-    actionButton("reset_all", "Reset all parameters to defaults")
+        actionButton("run_simulation", "Run Simulation"),
+        actionButton("reset_all", "Reset all parameters to defaults")
     ),
     div(
         id = "everything",
