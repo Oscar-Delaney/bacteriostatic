@@ -136,42 +136,37 @@ main_plot <- function(summary, titles = TRUE) {
     return(final_plot)
 }
 
-### Figure 1
+### Revised Figure 1
 
-summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = 0,
-                       therapy = "Cycling", resources = "Abundant")
-# Figure 1A:
-sol <- run_sims(summary[nrow(summary), ], rep = 1e1,
-                influx = c(C_A = 6, C_B = 0), dose_gap = 5, m_B = 0, data = TRUE)
-dynamics <- log_plot(sol, use = c("N_S", "N_A", "R")) #+
-  # annotate("text", x = 0, y = Inf, label = "A", hjust = 0.5, vjust = 1.5,
-  #          size = 15, fontface = "bold")
+# Figure 1A: (simulations commented out to save time)
 
-# Figure 1B:
+#summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = 0,
+#                       therapy = "Cycling", resources = "Abundant")
 # mono_high_res <- run_sims(summary, rep = 1e3,
 #     influx = c(C_A = 6, C_B = 0), dose_gap = 5, m_B = 0)
 # save(mono_high_res, file = "figs/fig1.rdata")
 load("figs/fig1.rdata")
 
-mono <- ggplot(mono_high_res, aes(x = bcidal_A, y = wins)) +
-    geom_point(size = 3) +
-    geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
-    scale_y_continuous(limits = c(0, 1)) +
-    theme_light() +
-    labs(
-        x = NULL,
-        y = "P(extinct)"
-    ) +
-    theme(
-        axis.title = element_text(size = 35),
-        axis.text = element_text(size = 25),
-        plot.margin = unit(c(0, 0, 0, 2), "cm")
-    ) 
-    # annotate("text", x = 0, y = Inf, label = "B", hjust = 1, vjust = 1.5,
-    #     size = 15, fontface = "bold")
+p_mono <- ggplot(mono_high_res, aes(x = bcidal_A, y = wins)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1), clip="off") +
+  theme_light() +
+  labs(
+    x = NULL,
+    y = "P(extinct)"
+  ) +
+  theme(
+    axis.title = element_text(size = 35),
+    axis.text = element_text(size = 25),
+    plot.margin = unit(c(0, 0, 0, 2), "cm")
+  ) +
+  annotate("text", x = -0.2, y = Inf, label = "A", hjust = 1, vjust = 1.5,
+           size = 15, fontface = "bold")
 
-# Figure 1C:
-# figure for JTB revision to check analytical results:
+# Figure 1B (new figure for JTB revision to check analytical results)
+# (simulations commented out to save time)
+
 # summary <- expand.grid(bcidal_A = seq(0, 1, 0.05), bcidal_B = 0,
 #                        therapy = "Cycling", resources = "Abundant")
 # mono_check_analytical <- run_sims(summary, rep = 1,
@@ -215,7 +210,7 @@ p_analytical <- ggplot(mapping = aes(x = bcidal_A, y = wins)) +
                 mapping = aes(ymin = ymin, ymax = ymax)) +
   geom_line(data = analytical, 
             aes(x = bcidal_A, y = Pext), col = "blue") +
-  scale_y_continuous(limits = c(0, 1)) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1), clip="off") +
   theme_light() +
   labs(
     x = NULL,
@@ -225,44 +220,14 @@ p_analytical <- ggplot(mapping = aes(x = bcidal_A, y = wins)) +
     axis.title = element_text(size = 35),
     axis.text = element_text(size = 25),
     plot.margin = unit(c(0, 0, 0, 2), "cm")
-  )
-# annotate("text", x = 0, y = Inf, label = "B", hjust = 1, vjust = 1.5,
-#          size = 15, fontface = "bold")
+  ) +
+ annotate("text", x = -0.2, y = Inf, label = "B", hjust = 1, vjust = 1.5,
+          size = 15, fontface = "bold")
 
-
-# Final figure:
-design <- "
-  123
-  145
-"
-
-design <- c(
-  area(1, 1, 2, 1),
-  area(1, 2),
-  area(1, 3),
-  area(2, 2),
-  area(2, 3)
-)
-
-plot(design)
-
-p <- dynamics + mono + p_analytical + bottom_plot + bottom_plot + 
-  plot_layout(design = design)
-
-p <- (dynamics | 
-  (mono / bottom_plot + plot_layout(heights = c(9, 1))) |
-  (p_analytical / bottom_plot + plot_layout(heights = c(9, 1)))) +
-  plot_layout(heights = c(1, 1, 1))
-
-
-ggsave("figs/fig1_revised.pdf", p, height = 12, width = 24)
-
-
-# print as a pdf
-pdf("figs/fig1.pdf", width = 24, height = 10)
-left | right
-dev.off()
-
+p <- ((p_mono / bottom_plot + plot_layout(heights = c(9, 1))) |
+     (p_analytical / bottom_plot + plot_layout(heights = c(9, 1))))
+    
+ggsave("figs/fig1_revised.pdf", p, height = 12, width = 20)
 
 
 ### Figure 2
