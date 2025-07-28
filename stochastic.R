@@ -256,8 +256,9 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
     filter(variable %in% use) %>%
     mutate(variable = factor(variable, levels = use)) %>%
     arrange(variable)
+  num_reps <- length(unique(filtered$rep))
   # Initialise the colours
-  colors <- c("black", "navy", "#800000", "#008000", "gold")
+  colors <- palette.colors(palette = "R4")[c(1,4,2,3,8)]
   # Create antibiotic concentrations data frame
   background_df <- solutions %>%
     filter(rep == min(rep) & variable %in% c("C_A", "C_B")) %>%
@@ -273,13 +274,13 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
   # Create the plot
   plot <- ggplot() +
     geom_line(data = filtered, aes(x = time, y = central, color = variable,
-      linetype = factor(rep)), linewidth = 1 + 0.5 / max(filtered$rep)) +
+      linetype = factor(rep)), linewidth = 1 + 0.5 / num_reps) +
     scale_color_manual(
       values = colors, 
       breaks = c("N_S", "N_A", "N_B", "N_AB", "R"),
       labels = expression(N[S], N[A], N[B], N[AB], R)
     ) +
-    scale_linetype_manual(values = rep("solid", max(filtered$rep))) +
+    scale_linetype_manual(values = rep("solid", num_reps)) +
     guides(linetype = "none") +
     scale_y_continuous(trans = scales::pseudo_log_trans(base = 10),
       breaks = 10^seq(0, 20),
@@ -296,10 +297,11 @@ log_plot <- function(solutions, type = "all", use = c("N_S", "N_A", "N_B", "N_AB
       axis.title = element_text(size = 35),
       axis.text = element_text(size = 25),
       legend.title = element_text(size = 20),
-      legend.text = element_text(size = 20)
+      legend.text = element_text(size = 20),
+      panel.grid.minor.y = element_blank()
     )
   # Add the confidence intervals
-  if (type %in% c("mean", "median") && max(solutions$rep) > 1) {
+  if (type %in% c("mean", "median") && num_reps > 1) {
     plot <- plot +
       geom_ribbon(data = filtered, alpha = 0.3,
         aes(x = time, ymin = lower, ymax = upper, fill = variable)) +

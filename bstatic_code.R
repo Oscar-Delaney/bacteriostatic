@@ -392,3 +392,59 @@ pdf("figs/dynamics.pdf", width = 20, height = 10)
 comb_graph + cycl_graph +
     plot_layout(widths = c(1, 1.05), guides = "collect")
 dev.off()
+
+
+### All dynamics figure
+# Four rows of plots: no antibiotics, monotherapy, combination therapy, and cycling therapy.
+# Define summary with one row for each row of plots.
+summary <- expand.grid(
+    bcidal_A = 1,
+    bcidal_B = 1,
+    therapy = c("Cycling", "Cycling", "Combination", "Cycling"),
+    resources = "Abundant"
+)
+# Define influx and use as lists with one element for each row of plots.
+influx <- lapply(list(
+    c(0, 0),
+    c(2, 0),
+    c(1, 1),
+    c(1, 1)
+), function(x) {x * eval(formals(run_sims)$influx)})
+# Define m_A, m_B, and dose_gap as vectors with one element for each row of plots.
+m_A <- c(0, 1, 1, 1) * eval(formals(run_sims)$m_A)
+m_B <- c(0, 0, 1, 1) * eval(formals(run_sims)$m_B)
+dose_gap <- c(1, 0.5, 1, 1) * eval(formals(run_sims)$dose_gap)
+
+n_cols <- 5
+all_dynamics_results <- lapply(seq(nrow(summary)), function(i) {
+    run_sims(
+        summary[i,],
+        rep = n_cols,
+        influx = influx[[i]],
+        m_A = m_A[i],
+        m_B = m_B[i],
+        dose_gap = dose_gap[i],
+        data = TRUE
+    )
+})
+save(all_dynamics_results, file = "figs/all_dynamics.rdata")
+
+all_dynamics_plots <- lapply(seq_along(all_dynamics_results), function(i) {
+    lapply(unique(all_dynamics_results[[i]]$rep), function(j) {
+        all_dynamics_results[[i]] |>
+            dplyr::filter(rep == j) |>
+            log_plot(use = c("N_S", "N_A", "N_B", "N_AB", "R")) +
+            theme(legend.position = "right", legend.box = "vertical")
+    })
+})
+
+# print as a pdf
+pdf("figs/all_dynamics.pdf", width = 20, height = 20)
+Reduce(`+`, flatten(all_dynamics_plots)) +
+    plot_layout(
+        ncol = n_cols,
+        byrow = TRUE,
+        guides = "collect",
+        axes = "collect"
+    )
+dev.off()
