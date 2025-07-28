@@ -72,7 +72,7 @@ bacteria_default <- matrix(
     )
 )
 
-general_content <- wellPanel(
+general_content <- tagList(
     HTML(general_text),
     numericInput("rep", "Number of Runs", value = 10, min = 1, step = 1),
     numericInput("time", "Simulation Time (hours)", value = 60, step = 1),
@@ -83,17 +83,17 @@ general_content <- wellPanel(
     numericInput("HGT", "recombination rate", value = 0, min = 0, step = 1e-15)
 )
 
-drugs_content <- wellPanel(
+drugs_content <- tagList(
     p(drugs_text),
     withMathJax(matrixInput("drugs", value = drugs_default, class = "numeric"))
 )
 
-bacteria_content <- wellPanel(
+bacteria_content <- tagList(
     p(bacteria_text),
     withMathJax(matrixInput("bacteria", value = bacteria_default, class = "numeric"))
 )
 
-events_content <- wellPanel(
+events_content <- tagList(
     p(events_text),
     numericInput("tau", "Bottleneck period (hours)", value = "1e4", step = 1),
     numericInput("R0", "Media resource concentration", value = "1e11", step = 1e9),
@@ -104,7 +104,7 @@ events_content <- wellPanel(
     checkboxInput("keep_old_drugs", "Old drugs persist through dosing", TRUE),
 )
 
-graph_content <- tagList(
+display_content <- tagList(
     radioButtons("display", "Uncertainty Display",
         choices = c(
             "Median + 25th and 75th percentiles" = "median",
@@ -112,7 +112,10 @@ graph_content <- tagList(
             "Plot all the runs" = "all"
         ),
         selected = "all"
-    ),
+    )
+)
+
+graph_content <- tagList(
     plotOutput("plot", height = "600", width = "100%")
 )
 
@@ -121,20 +124,21 @@ ui <- fluidPage(
     useShinyjs(),
     titlePanel("Stochastic Simulation of Antibiotic Resistance"),
     p(
-    actionButton("run_simulation", "Run Simulation"),
-    actionButton("reset_all", "Reset all parameters to defaults")
+        actionButton("run_simulation", "Run Simulation"),
+        actionButton("reset_all", "Reset all parameters to defaults")
     ),
     div(
         id = "everything",
-        mainPanel(
+        sidebarPanel(
             tabsetPanel(
-                tabPanel("General", fluidRow(column(6, general_content))),
-                tabPanel("Drugs", fluidRow(column(6, drugs_content))),
-                tabPanel("Bacteria", fluidRow(column(6, bacteria_content))),
-                tabPanel("Events", fluidRow(column(6, events_content))),
-                tabPanel("Graph", graph_content)
+                tabPanel("General", wellPanel(general_content)),
+                tabPanel("Drugs", wellPanel(drugs_content)),
+                tabPanel("Bacteria", wellPanel(bacteria_content)),
+                tabPanel("Events", wellPanel(events_content)),
+                tabPanel("Display", wellPanel(display_content))
             )
-        )
+        ),
+        mainPanel(graph_content)
     )
 )
 
@@ -177,8 +181,13 @@ server <- function(input, output, session) {
         )
     })
     output$plot <- renderPlot({
+        progress <- shiny::Progress$new()
+        on.exit(progress$close())
+        progress$set(message = "Running simulation", value = 0)
+        
         # Check if the simulation_result has been executed
         if (!is.null(simulation_result())) {
+            progress$set(message = "Generating plot", value = 1)
             # Create a plot of the simulation results
             log_plot(simulation_result()[[1]], type = input$display)
         }
