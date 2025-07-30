@@ -18,7 +18,7 @@ target_hit <- function(sol, target = 1e2, strains = c("N_A", "N_B")) {
 run_sims <- function(summary, zeta_A = c(N_S = 1, N_A = 28, N_B = 1, N_AB = 28),
 zeta_B = c(N_S = 1, N_A = 1, N_B = 28, N_AB = 28), delta = 0.25, rep = 1, dose_gap = 10,
 influx = 3 * c(C_A = 1, C_B = 1), m_A = 1e-9, m_B = 1e-9, d_ = 0, init_A = 0,
-init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
+init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, seed_offset = 0, data = FALSE) {
     get_mult <- function(var, i) {
         varname <- paste0("mult_", var)
         return(ifelse(is.null(summary[i, varname]), 1, summary[i, varname]))
@@ -37,7 +37,7 @@ init_B = 0, R0 = 1e8, i_A_B = 0, i_B_A = 0, data = FALSE) {
             "Abundant" = 3, "Intermediate" = 1.5, "Limiting" = 0)
         d <- d_ + ifelse(cycl, 0.1, 0.35)
         sol <- simulate(
-            seed = i * rep,
+            seed = seed_offset + i * rep,
             init = c(N_S = ifelse(cycl, 5e8, 1e10),
               N_A = init_A, N_B = init_B, N_AB = 0) * get_mult("init", i),
             R0 = R0 * 10 ^ res,
