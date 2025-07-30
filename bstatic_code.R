@@ -410,10 +410,11 @@ influx <- lapply(list(
     c(1, 1),
     c(1, 1)
 ), function(x) {x * eval(formals(run_sims)$influx)})
-# Define m_A, m_B, and dose_gap as vectors with one element for each row of plots.
+# Define m_A, m_B, dose_gap, and seed_offset as vectors with one element for each row of plots.
 m_A <- c(0, 1, 1, 1) * eval(formals(run_sims)$m_A)
 m_B <- c(0, 0, 1, 1) * eval(formals(run_sims)$m_B)
 dose_gap <- c(1, 0.5, 1, 1) * eval(formals(run_sims)$dose_gap)
+seed_offset <- c(0, 1, 1, 0) # Chosen by trial-and error to produce a set of figures that show the range of possible dynamics.
 
 n_cols <- 5
 all_dynamics_results <- lapply(seq(nrow(summary)), function(i) {
@@ -424,6 +425,7 @@ all_dynamics_results <- lapply(seq(nrow(summary)), function(i) {
         m_A = m_A[i],
         m_B = m_B[i],
         dose_gap = dose_gap[i],
+        seed_offset = seed_offset[i],
         data = TRUE
     )
 })
